@@ -1,0 +1,28 @@
+kind = "web"
+previewPath = "/"
+title = "ProjectPilot AI"
+description = "An AI-powered project companion for final-year students that turns interests and skills into practical, evaluator-ready project blueprints with features, technologies, milestones, and improvement guidance."
+version = "1.0.0"
+id = "artifacts/projectpilot-ai"
+router = "path"
+
+[[services]]
+name = "web"
+paths = [ "/" ]
+localPort = 25985
+
+[services.development]
+run = "pnpm --filter @workspace/projectpilot-ai run dev"
+
+[services.production]
+build = [ "pnpm", "--filter", "@workspace/projectpilot-ai", "run", "build" ]
+serve = "static"
+publicDir = "artifacts/projectpilot-ai/dist/public"
+
+[[services.production.rewrites]]
+from = "/*"
+to = "/index.html"
+
+[services.env]
+PORT = "25985"
+BASE_PATH = "/"
