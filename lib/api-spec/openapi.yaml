@@ -1,0 +1,283 @@
+openapi: 3.1.0
+info:
+  # Do not change the title, if the title changes, the import paths will be broken
+  title: Api
+  version: 0.1.0
+  description: API specification
+servers:
+  - url: /api
+    description: Base API path
+tags:
+  - name: health
+    description: Health operations
+  - name: projectpilot
+    description: ProjectPilot AI project ideation operations
+paths:
+  /healthz:
+    get:
+      operationId: healthCheck
+      tags: [health]
+      summary: Health check
+      description: Returns server health status
+      responses:
+        "200":
+          description: Healthy
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/HealthStatus"
+  /projectpilot/generate:
+    post:
+      operationId: generateProjectIdeas
+      tags: [projectpilot]
+      summary: Generate project ideas
+      description: Creates practical project ideas and a recommended starting direction from a student's interests and skills.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/IdeaGenerationInput"
+      responses:
+        "200":
+          description: Generated ideas
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/IdeaGenerationResult"
+        "400":
+          description: Invalid input
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+  /projectpilot/projects:
+    get:
+      operationId: listProjects
+      tags: [projectpilot]
+      summary: List saved projects
+      responses:
+        "200":
+          description: Saved projects
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/ProjectSummary"
+    post:
+      operationId: createProject
+      tags: [projectpilot]
+      summary: Save a generated project
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ProjectInput"
+      responses:
+        "201":
+          description: Saved project
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ProjectSummary"
+  /projectpilot/projects/{projectId}:
+    get:
+      operationId: getProject
+      tags: [projectpilot]
+      summary: Get a project blueprint
+      parameters:
+        - $ref: "#/components/parameters/ProjectId"
+      responses:
+        "200":
+          description: Project blueprint
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ProjectBlueprint"
+        "404":
+          description: Project not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+    post:
+      operationId: improveProject
+      tags: [projectpilot]
+      summary: Generate improvement suggestions for a project
+      parameters:
+        - $ref: "#/components/parameters/ProjectId"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ImprovementInput"
+      responses:
+        "200":
+          description: Improvement suggestions
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ImprovementResult"
+components:
+  parameters:
+    ProjectId:
+      name: projectId
+      in: path
+      required: true
+      schema:
+        type: string
+  schemas:
+    HealthStatus:
+      type: object
+      properties:
+        status:
+          type: string
+      required:
+        - status
+    Error:
+      type: object
+      properties:
+        error:
+          type: string
+      required:
+        - error
+    IdeaGenerationInput:
+      type: object
+      properties:
+        interests:
+          type: string
+          minLength: 2
+        skills:
+          type: string
+          minLength: 2
+        domain:
+          type: string
+        constraints:
+          type: string
+        ambition:
+          type: string
+          enum: [focused, ambitious, experimental]
+      required: [interests, skills, ambition]
+    ProjectInput:
+      type: object
+      properties:
+        blueprint:
+          $ref: "#/components/schemas/ProjectBlueprint"
+      required: [blueprint]
+    ImprovementInput:
+      type: object
+      properties:
+        focus:
+          type: string
+          minLength: 2
+      required: [focus]
+    ProjectSummary:
+      type: object
+      properties:
+        id:
+          type: string
+        title:
+          type: string
+        tagline:
+          type: string
+        domain:
+          type: string
+        readiness:
+          type: number
+        updatedAt:
+          type: string
+      required: [id, title, tagline, domain, readiness, updatedAt]
+    ProjectBlueprint:
+      type: object
+      properties:
+        id:
+          type: string
+        title:
+          type: string
+        tagline:
+          type: string
+        problem:
+          type: string
+        audience:
+          type: string
+        domain:
+          type: string
+        readiness:
+          type: number
+        skills:
+          type: array
+          items:
+            type: string
+        features:
+          type: array
+          items:
+            type: object
+            properties:
+              name: { type: string }
+              description: { type: string }
+              tier:
+                type: string
+                enum: [core, differentiator, stretch]
+            required: [name, description, tier]
+        technologies:
+          type: array
+          items:
+            type: object
+            properties:
+              name: { type: string }
+              reason: { type: string }
+              category: { type: string }
+            required: [name, reason, category]
+        steps:
+          type: array
+          items:
+            type: object
+            properties:
+              number: { type: number }
+              title: { type: string }
+              detail: { type: string }
+              duration: { type: string }
+            required: [number, title, detail, duration]
+        improvements:
+          type: array
+          items:
+            type: object
+            properties:
+              title: { type: string }
+              detail: { type: string }
+              impact: { type: string }
+            required: [title, detail, impact]
+        demoScript:
+          type: array
+          items:
+            type: string
+      required: [id, title, tagline, problem, audience, domain, readiness, skills, features, technologies, steps, improvements, demoScript]
+    IdeaGenerationResult:
+      type: object
+      properties:
+        ideas:
+          type: array
+          items:
+            $ref: "#/components/schemas/ProjectBlueprint"
+        rationale:
+          type: string
+      required: [ideas, rationale]
+    ImprovementResult:
+      type: object
+      properties:
+        projectId:
+          type: string
+        suggestions:
+          type: array
+          items:
+            type: object
+            properties:
+              title: { type: string }
+              detail: { type: string }
+              impact: { type: string }
+            required: [title, detail, impact]
+      required: [projectId, suggestions]
+
